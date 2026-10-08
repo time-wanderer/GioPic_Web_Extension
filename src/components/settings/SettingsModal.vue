@@ -31,6 +31,7 @@ import SiteEditorSettings from './SiteEditorSettings.vue'
 import { useMessage, useDialog } from 'naive-ui'
 import { db } from '@/utils/storage'
 import { getDefaultSettings } from '@/constants/defaultSettings'
+import { isNewerVersion } from '@/utils/version'
 
 type DesktopLinkStatusType = 'disabled' | 'disconnected' | 'connecting' | 'connected' | 'error'
 
@@ -236,8 +237,8 @@ async function checkVersion(force = false) {
                 const { time, version } = JSON.parse(cached)
                 // Cache valid for 6 hours 中文 缓存过期时间 6 小时
                 if (Date.now() - time < 6 * 60 * 60 * 1000) {
+                    hasUpdate.value = isNewerVersion(version, currentVersion.value)
                     latestVersion.value = version
-                    hasUpdate.value = version !== currentVersion.value
                     return
                 }
             }
@@ -274,8 +275,8 @@ async function checkVersion(force = false) {
         }
 
         if (tagName) {
+            hasUpdate.value = isNewerVersion(tagName, currentVersion.value)
             latestVersion.value = tagName.replace(/^v/, '')
-            hasUpdate.value = latestVersion.value !== currentVersion.value
 
             // Save to cache
             localStorage.setItem('giopic-version-check', JSON.stringify({

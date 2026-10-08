@@ -107,6 +107,15 @@ export default {
     refresh: '刷新',
     nodeTip: '点击选择/取消选择',
     editNode: '编辑节点',
+    accountStats: {
+      username: '用户',
+      capacity: '总容量',
+      used: '已用容量',
+      images: '图片数量',
+      loading: '正在读取账户统计…',
+      failed: '无法读取账户统计，请检查地址、Token 或接口权限后重试。',
+      unsupported: '当前仅支持 Lsky v1 账户统计。',
+    },
     dropZone: {
       title: '释放图片到此处',
       subtitle: '支持多图并行上传，自动分发至已选节点',

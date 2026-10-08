@@ -107,6 +107,15 @@ export default {
     refresh: 'Refresh',
     nodeTip: 'Click to toggle selection',
     editNode: 'Edit Node',
+    accountStats: {
+      username: 'User',
+      capacity: 'Total capacity',
+      used: 'Used capacity',
+      images: 'Images',
+      loading: 'Loading account statistics…',
+      failed: 'Could not load statistics. Check the URL, token or API permissions and retry.',
+      unsupported: 'Account statistics currently support Lsky v1 only.',
+    },
     dropZone: {
       title: 'Drop Images Here',
       subtitle: 'Multi-image parallel upload, auto-distribute to selected nodes',
