@@ -98,6 +98,8 @@ export async function getManifest() {
             },
         }
     } else {
+        // 固定此 fork 的 Chromium 扩展 ID；后续版本必须保留同一公钥。
+        Object.assign(manifest, { key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3qjU9YVl60V9lEosCo1Sh4PsAUf1Xyj3fiLUXa0+QM04TKhiflFH93fPACCWkz1kr0W1qvOFltThXNTWYSvDVkxxmix03H/Fzb/uUXHZBDBDmJobBj4hVxAe41cJIv3WhEqR9gjbZpEpMDsvwglZ7iELQAFaiBlI37I35HeJfGGDufCWfJrqy96LT/EwuH53mUMrCr5ne2yj5lFrVd3c1DKTmVPwtRdxUMWOXfavSFOrJf2FgU7tnTS++yeSqHfJUH8lFf1aqvFkTWUkJGus5AOUoA0sA12y6uL2QYQCjkGn+t9eACPRWaWZFJ3RhT7klIZGSCWOueC4Oxh9SyfXdwIDAQAB' })
         // @ts-ignore
         manifest.side_panel = {
             default_path: 'index.html',

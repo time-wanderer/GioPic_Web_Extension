@@ -45,6 +45,17 @@ export const db = {
     await (await dbPromise).put(STORE_NAME, val, key)
   },
 
+  async setEntries(entries: [string, unknown][]): Promise<void> {
+    const transaction = (await dbPromise).transaction(STORE_NAME, 'readwrite')
+    try {
+      await Promise.all([transaction.done, ...entries.map(async ([key, value]) => value === undefined
+        ? transaction.store.delete(key) : transaction.store.put(value, key))])
+    } catch (error) {
+      try { transaction.abort() } catch { /* Transaction may already be aborted. */ }
+      throw error
+    }
+  },
+
   /**
    * 删除键值
    * @param key - 键名

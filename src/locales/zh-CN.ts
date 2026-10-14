@@ -389,6 +389,20 @@ export default {
     }
   },
   settings: {
+    backup: {
+      title: '配置备份',
+      description: '备份图床节点及密钥、选中状态和各项设置，不含上传历史与已安装插件。文件包含明文密钥，请妥善保存。',
+      export: '导出配置',
+      import: '导入配置',
+      confirm: '将覆盖当前图床节点、选中状态和设置，恢复 {count} 个节点。确认后会先下载当前配置备份，再导入并刷新页面；其他已打开的扩展页面请手动刷新。',
+      exportSuccess: '已开始下载配置备份',
+      exportFailed: '导出失败，配置未修改',
+      invalidFile: '备份文件无效或超过 5 MB，配置未修改',
+      importSuccess: '配置已恢复，正在刷新页面',
+      reloadHint: '配置已保存，部分后台设置需重新加载扩展后生效',
+      importFailed: '导入失败，原配置已保留',
+      rollbackFailed: '导入失败且无法完整恢复原配置，请使用刚下载的 GioPic-before-import 备份恢复',
+    },
     title: '设置',
       plugins: {
         title: '插件管理',

@@ -375,6 +375,20 @@ export default {
     }
   },
   settings: {
+    backup: {
+      title: 'Configuration backup',
+      description: 'Back up nodes, credentials, selection and settings. Upload history and installed plugins are excluded. The file contains unencrypted credentials; keep it private.',
+      export: 'Export configuration',
+      import: 'Import configuration',
+      confirm: 'Replace current nodes, selection and settings with {count} nodes. Your current configuration will be downloaded first, then the backup will be restored and this page refreshed. Refresh other open extension pages manually.',
+      exportSuccess: 'Configuration backup download started',
+      exportFailed: 'Export failed; configuration was not changed',
+      invalidFile: 'Invalid backup or file larger than 5 MB; configuration was not changed',
+      importSuccess: 'Configuration restored; refreshing this page',
+      reloadHint: 'Configuration saved; reload the extension to apply some background settings',
+      importFailed: 'Import failed; original configuration was preserved',
+      rollbackFailed: 'Import and recovery failed. Restore the downloaded GioPic-before-import backup.',
+    },
     title: 'Settings',
       plugins: {
         title: 'Plugin Management',

@@ -32,6 +32,8 @@ import { useMessage, useDialog } from 'naive-ui'
 import { db } from '@/utils/storage'
 import { getDefaultSettings } from '@/constants/defaultSettings'
 import { isNewerVersion } from '@/utils/version'
+import { CONFIG_SETTING_KEYS, parseConfigBackup, type ConfigBackup } from '@/utils/configBackup'
+import type { DriveConfig } from '@/types'
 
 type DesktopLinkStatusType = 'disabled' | 'disconnected' | 'connecting' | 'connected' | 'error'
 
@@ -48,6 +50,114 @@ const router = useRouter()
 const themeStore = useThemeStore()
 const message = useMessage()
 const dialog = useDialog()
+const backupInput = ref<HTMLInputElement | null>(null)
+const backupBusy = ref(false)
+
+async function readConfigBackup(): Promise<ConfigBackup> {
+    const [configs, selectedIds, settings] = await Promise.all([
+        db.get<DriveConfig[]>('giopic-configs'),
+        db.get<string[]>('giopic-selected-ids'),
+        browser.storage.local.get(CONFIG_SETTING_KEYS),
+    ])
+    return {
+        format: 'giopic-config-backup', schemaVersion: 1,
+        configs: configs || [],
+        selectedIds: selectedIds ?? (configs || []).map(config => config.id),
+        settings,
+    }
+}
+
+function downloadConfigBackup(backup: ConfigBackup, prefix = 'GioPic-config') {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${prefix}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+async function exportConfigBackup() {
+    backupBusy.value = true
+    try {
+        downloadConfigBackup(await readConfigBackup())
+        message.success(t('settings.backup.exportSuccess'))
+    } catch {
+        message.error(t('settings.backup.exportFailed'))
+    } finally {
+        backupBusy.value = false
+    }
+}
+
+async function writeBackupSettings(settings: Record<string, unknown>) {
+    await browser.storage.local.set(settings)
+    await browser.storage.local.remove(CONFIG_SETTING_KEYS.filter(key => !Object.prototype.hasOwnProperty.call(settings, key)))
+}
+
+async function importConfigBackup(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file || backupBusy.value) return
+    backupBusy.value = true
+    let backup: ConfigBackup
+    try {
+        if (file.size > 5 * 1024 * 1024) throw new Error('Backup exceeds 5 MB')
+        backup = parseConfigBackup(await file.text())
+    } catch {
+        message.error(t('settings.backup.invalidFile'))
+        backupBusy.value = false
+        return
+    }
+    dialog.warning({
+        title: t('settings.backup.import'),
+        content: t('settings.backup.confirm', { count: backup.configs.length }),
+        positiveText: t('common.confirm'),
+        negativeText: t('common.cancel'),
+        onNegativeClick: () => { backupBusy.value = false },
+        onClose: () => { backupBusy.value = false },
+        maskClosable: false,
+        onPositiveClick: async () => {
+            let previousEntries: [string, unknown][] | undefined
+            let previousSettings: Record<string, unknown> | undefined
+            let started = false
+            try {
+                const previous = await readConfigBackup()
+                previousSettings = previous.settings
+                previousEntries = [
+                    ['giopic-configs', await db.get('giopic-configs')],
+                    ['giopic-selected-ids', await db.get('giopic-selected-ids')],
+                ]
+                downloadConfigBackup(previous, 'GioPic-before-import')
+                started = true
+                await db.setEntries([['giopic-configs', backup.configs], ['giopic-selected-ids', backup.selectedIds]])
+                await writeBackupSettings(backup.settings)
+            } catch {
+                if (started && previousEntries && previousSettings) {
+                    try {
+                        await db.setEntries(previousEntries)
+                        await writeBackupSettings(previousSettings)
+                    } catch {
+                        message.error(t('settings.backup.rollbackFailed'), { duration: 0, closable: true })
+                        backupBusy.value = false
+                        return
+                    }
+                }
+                message.error(t('settings.backup.importFailed'))
+                backupBusy.value = false
+                return
+            }
+            // 复用设置页现有后台消息，使打开方式、菜单语言和桌面联动立即生效。
+            const synced = await Promise.allSettled([
+                browser.runtime.sendMessage({ type: 'UPDATE_OPEN_MODE' }),
+                browser.runtime.sendMessage({ type: 'UPDATE_LOCALE', lang: backup.settings['giopic-locale'] || 'zh-CN' }),
+                browser.runtime.sendMessage({ type: 'DESKTOP_LINK_SET_ENABLED', enabled: backup.settings['giopic-desktop-link-enabled'] === true }),
+            ])
+            message.success(t(synced.some(result => result.status === 'rejected')
+                ? 'settings.backup.reloadHint' : 'settings.backup.importSuccess'))
+            setTimeout(() => window.location.reload(), 1000)
+        },
+    })
+}
 
 const openMode = ref('tab')
 
@@ -431,6 +541,17 @@ async function handleResetExtension() {
                                     @click="themeStore.setUiMode(mode as any)">
                                     <div :class="uiModeIcons[mode]" /> {{ t(`settings.uiModes.${mode}`) }}
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Configuration backup -->
+                        <div>
+                            <div class="text-sm font-bold text-gray-500 mb-2">{{ t('settings.backup.title') }}</div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ t('settings.backup.description') }}</p>
+                            <div class="flex gap-2">
+                                <n-button :disabled="backupBusy" @click="exportConfigBackup">{{ t('settings.backup.export') }}</n-button>
+                                <n-button :disabled="backupBusy" @click="backupInput?.click()">{{ t('settings.backup.import') }}</n-button>
+                                <input ref="backupInput" type="file" accept=".json,application/json" class="hidden" @change="importConfigBackup" />
                             </div>
                         </div>
 
