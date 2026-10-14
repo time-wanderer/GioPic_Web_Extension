@@ -153,7 +153,9 @@ export default defineConfig(({ mode }) => {
     ...config,
     resolve: commonResolve,
     define: {
-      global: 'globalThis'
+      global: 'globalThis',
+      // ponytail: 仅适用于隔离世界的 content 包；改为 MAIN world 时需重新适配宿主 Trusted Types。
+      ...(target === 'content' ? { 'window.trustedTypes': 'undefined' } : {})
     }
   }
 })
